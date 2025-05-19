@@ -1,7 +1,7 @@
 // src/frontend/lib/apiClient.ts
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from "../store/authStore";
 
-const API_BASE_URL = '/api'; // El servidor Bun/Hono sirve la API bajo /api
+const API_BASE_URL = "http://localhost:3000/api"; // Cambiado para apuntar al backend en el puerto 3000
 
 interface ApiErrorData {
   error: string; // Esperamos que el backend devuelva un objeto con una propiedad 'error'
@@ -16,12 +16,16 @@ async function request<T>(
   const headers = new Headers(options.headers || {});
 
   if (token) {
-    headers.append('Authorization', `Bearer ${token}`);
+    headers.append("Authorization", `Bearer ${token}`);
   }
 
   // Solo añadir Content-Type si hay un body y no es FormData
-  if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
-      headers.append('Content-Type', 'application/json');
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.append("Content-Type", "application/json");
   }
 
   const config: RequestInit = {
@@ -32,7 +36,9 @@ async function request<T>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
   if (!response.ok) {
-    let errorData: ApiErrorData | string = { error: `HTTP error ${response.status}: ${response.statusText}`};
+    let errorData: ApiErrorData | string = {
+      error: `HTTP error ${response.status}: ${response.statusText}`,
+    };
     try {
       // Intenta parsear el cuerpo del error como JSON
       const parsedError = await response.json();
@@ -45,24 +51,38 @@ async function request<T>(
       console.warn("Could not parse error response JSON:", e);
     }
     // Lanzar el mensaje de error extraído o el genérico
-    throw new Error(typeof errorData === 'string' ? errorData : errorData.error);
+    throw new Error(
+      typeof errorData === "string" ? errorData : errorData.error
+    );
   }
 
-  if (response.status === 204 || response.headers.get("content-length") === "0") { // No Content o sin cuerpo
-      return null as T;
+  if (
+    response.status === 204 ||
+    response.headers.get("content-length") === "0"
+  ) {
+    // No Content o sin cuerpo
+    return null as T;
   }
   return response.json() as Promise<T>;
 }
 
 export const apiClient = {
   get: <T>(endpoint: string, options?: RequestInit) =>
-    request<T>(endpoint, { ...options, method: 'GET' }),
+    request<T>(endpoint, { ...options, method: "GET" }),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   post: <T>(endpoint: string, body: any, options?: RequestInit) =>
-    request<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+    request<T>(endpoint, {
+      ...options,
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   put: <T>(endpoint: string, body: any, options?: RequestInit) =>
-    request<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+    request<T>(endpoint, {
+      ...options,
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
   delete: <T>(endpoint: string, options?: RequestInit) =>
-    request<T>(endpoint, { ...options, method: 'DELETE' }),
+    request<T>(endpoint, { ...options, method: "DELETE" }),
 };
