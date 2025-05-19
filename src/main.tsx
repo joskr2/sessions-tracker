@@ -7,9 +7,9 @@
 
 import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
-import { App } from "./App";
+import App from "./App";
 
-const elem = document.getElementById("root")!;
+const elem = document.getElementById("root") as HTMLElement;
 const app = (
   <StrictMode>
     <App />
@@ -18,7 +18,10 @@ const app = (
 
 if (import.meta.hot) {
   // With hot module reloading, `import.meta.hot.data` is persisted.
-  const root = (import.meta.hot.data.root ??= createRoot(elem));
+let root = import.meta.hot.data.root;
+if (!root) {
+  root = import.meta.hot.data.root = createRoot(elem);
+}
   root.render(app);
 } else {
   // The hot module reloading API is not available in production.
