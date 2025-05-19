@@ -1,4 +1,4 @@
-import React, { useRef, type FormEvent } from "react";
+import { useRef, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,9 +25,9 @@ export function APITester() {
       const res = await fetch(url, { method });
 
       const data = await res.json();
-      responseInputRef.current!.value = JSON.stringify(data, null, 2);
+      responseInputRef.current.value = JSON.stringify(data, null, 2) || "";
     } catch (error) {
-      responseInputRef.current!.value = String(error);
+      responseInputRef.current.value = String(error) || "";
     }
   };
 
