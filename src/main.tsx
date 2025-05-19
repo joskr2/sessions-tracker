@@ -10,6 +10,7 @@ import { StrictMode } from "react";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./frontend/context/ThemeProvider";
+import "./index.css";
 
 const elem = document.getElementById("root") as HTMLElement;
 const app = (
