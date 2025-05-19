@@ -1,9 +1,10 @@
-import React from 'react'
+// src/frontend/App.tsx
 
-const App = () => {
-  return (
-    <div>App funciona</div>
-  )
+import { AppRoutes } from "./frontend/router";
+
+function App() {
+	// El ThemeProvider ya está en main.tsx envolviendo a App
+	return <AppRoutes />;
 }
 
-export default App
+export default App;
