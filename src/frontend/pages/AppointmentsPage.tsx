@@ -54,7 +54,7 @@ export default function AppointmentsPage() {
 		setStoreLoading(true);
 		try {
 			await appointmentService.getAppointments(); // El servicio actualiza el store
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		} catch (err: any) {
 			toast.error(err.message || "Failed to fetch appointments");
 			// El servicio ya pone el error en el store
@@ -179,8 +179,8 @@ export default function AppointmentsPage() {
 			toast.success("Appointment deleted successfully!");
 			// La actualización del store debería venir por WebSocket.
 			// Si no, puedes llamar a removeAppointmentState aquí.
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-								} catch (err: any) {
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		} catch (err: any) {
 			toast.error(err.message || "Failed to delete appointment.");
 		} finally {
 			setAppointmentToDelete(null); // Cierra el modal

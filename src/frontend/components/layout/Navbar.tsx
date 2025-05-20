@@ -6,7 +6,6 @@ import { ThemeToggle } from "./ThemeToggle"; // Importa el ThemeToggle
 import { LogOut, CalendarDays, UserCircle } from "lucide-react"; // Iconos
 import { Button } from "../ui/button";
 
-
 export default function Navbar() {
 	const navigate = useNavigate();
 	const { user, clearAuth } = useAuthStore((state) => ({

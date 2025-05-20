@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,7 +123,7 @@ export function AppointmentForm({
 			} else {
 				toast.error("Appointment creation failed. Please check your input.");
 			}
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		} catch (err: any) {
 			console.error(err);
 			toast.error(err.message || "An unexpected error occurred.");

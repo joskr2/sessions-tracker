@@ -11,7 +11,7 @@ const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY_STRING);
 const ALG = 'HS256';
 
 // Mock de base de datos de usuarios (reemplazar con una base de datos real)
-const usersDB: User[] = [
+const usersDB: User[]  = [
   { id: '1', email: 'user@example.com', name: 'Test User' },
 ];
 const passwordsDB: Record<string, string> = { // Simulación de contraseñas (¡NO HACER ESTO EN PRODUCCIÓN!)

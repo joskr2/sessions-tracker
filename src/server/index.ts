@@ -1,61 +1,70 @@
+// src/server/index.ts
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { serveStatic } from 'hono/bun'; // Para servir el frontend
+import { serveStatic } from 'hono/bun';
 import { secureHeaders } from 'hono/secure-headers';
-
 import { authRoutes } from './auth/routes';
 import { appointmentRoutes } from './appointments/routes';
-import { webSocketHandler, broadcastUpdate } from './websockets'; // Importaremos esto
-import type { User } from '@/shared/types'; // Asegúrate que el alias funciona
+import { webSocketHandler, broadcastUpdate } from './websockets'; // Asegúrate que el path es correcto
+import type { User } from '@/shared/types';
 
-// Para adjuntar el usuario al contexto de Hono después de la autenticación
-// y también para la información del WebSocket.
 declare module 'hono' {
   interface ContextVariableMap {
     user?: User;
-    // wsInstance?: ServerWebSocket<WebSocketSessionData>;
   }
 }
 
-// Datos que queremos asociar a cada conexión WebSocket en el servidor
 export interface WebSocketSessionData {
   socketId: string;
-  userId?: string; // Opcional, si quieres asociar usuarios autenticados a sockets
+  userId?: string;
 }
-
 
 const app = new Hono();
 
 // --- Middleware ---
-app.use('*', logger()); // Logger para todas las rutas
-app.use('/api/*', cors()); // CORS para todas las rutas API
-app.use('*', secureHeaders()); // Headers de seguridad básicos
+app.use('*', logger());
+app.use('/api/*', cors());
+app.use('*', secureHeaders());
 
 // --- Rutas API ---
 app.route('/api/auth', authRoutes);
 app.route('/api/appointments', appointmentRoutes);
 
 // --- Servir Frontend ---
-// Asumimos que `bun run build` (usando tu build.ts)
-// coloca los archivos del frontend en `dist` o `dist/frontend`.
-// Ajusta 'root' si tu `build.ts` tiene un outdir diferente para el frontend.
-// Por ahora, el build.ts original pone todo en 'dist'.
-// Y `src/frontend/index.html` será el punto de entrada.
 
-// Durante el desarrollo, Bun puede servir directamente desde `src` si `frontend.tsx` se importa.
-// Pero para producción y para que `serveStatic` funcione bien, necesitamos un build.
+// 1. Servir archivos estáticos específicos conocidos que están en la raíz de 'dist'
+//    Asegúrate de que 'logo.svg' y 'react.svg' (si existe) se copian a 'dist/' durante el build.
+//    Tu build.ts actual no parece copiar explícitamente src/logo.svg a dist/logo.svg.
+//    Bun como bundler, cuando procesa src/index.html, debería manejar esto.
+//    Si logo.svg está en la raíz de 'dist' después del build, esto funcionará.
+app.get('/logo.svg', serveStatic({ path: './dist/logo.svg' }));
+// app.get('/react.svg', serveStatic({ path: './dist/react.svg' })); // Si tienes este
 
-// Sirve archivos estáticos de la carpeta `dist` (donde `build.ts` compila el frontend)
-app.use('/assets/*', serveStatic({ root: './dist/assets' })) // JS, CSS compilados
-app.use('/logo.svg', serveStatic({ path: './dist/logo.svg' })) // Si está en dist
-app.use('/react.svg', serveStatic({ path: './dist/react.svg' })) // Si está en dist
+// 2. Servir los chunks de CSS, JS y sourcemaps generados por el build.
+//    Estos también están en la raíz de 'dist/'.
+//    Este patrón Hono usa un parámetro con una expresión regular.
+//    Captura nombres de archivo como 'chunk-xxxxxxx.css' o 'chunk-yyyyyyy.js'.
+app.get(
+  '/:filename{[a-zA-Z0-9_-]+-[a-zA-Z0-9]+\\.(css|js|js\\.map)}',
+  serveStatic({ root: './dist' })
+);
+// Explicación del patrón:
+// - '/:filename' - define un parámetro llamado 'filename'.
+// - '{...}' - envuelve una expresión regular para este parámetro.
+// - '[a-zA-Z0-9_-]+' - una o más letras, números, guiones bajos o guiones (para la parte antes del hash).
+// - '-' - un guion literal.
+// - '[a-zA-Z0-9]+' - una o más letras o números (para la parte del hash).
+// - '\\.' - un punto literal (escapado).
+// - '(css|js|js\\.map)' - coincide con las extensiones 'css', 'js', o 'js.map'.
+// `serveStatic({ root: './dist' })` tomará el path completo que coincidió (ej. /chunk-c3w9s8bg.css)
+// y buscará el archivo en `./dist/chunk-c3w9s8bg.css`.
 
-// Para todas las demás rutas que no son API ni assets, sirve el index.html del frontend (SPA)
+// 3. SPA Fallback: Si ninguna ruta de API o de archivo estático coincidió, servir index.html.
+//    Esta debe ser la ÚLTIMA ruta GET general.
 app.get('*', serveStatic({ path: './dist/index.html' }));
 
-
-console.log("Servidor Hono configurado.");
+console.log("Servidor Hono configurado para servir API y Frontend desde './dist'");
 
 // --- Servidor Bun principal (HTTP y WebSocket) ---
 const server = Bun.serve({
@@ -63,20 +72,18 @@ const server = Bun.serve({
   async fetch(request, serverInstance) {
     const url = new URL(request.url);
     if (url.pathname === '/ws') {
-      // Intenta actualizar a WebSocket si la ruta es /ws
-      // El objeto serverInstance se pasa a webSocketHandler.upgrade
       const success = serverInstance.upgrade<WebSocketSessionData>(request, {
-        data: { socketId: `temp-${crypto.randomUUID()}` }, // data inicial, se actualiza en open
+        data: { socketId: `temp-${crypto.randomUUID()}` },
       });
-      if (success) {
-        return; // La conexión WebSocket ha sido manejada por el handler de Bun
-      }
+      if (success) return;
       return new Response("WebSocket upgrade failed", { status: 500 });
     }
-    // Para todas las demás peticiones, usa la app Hono
-    return app.fetch(request, { server: serverInstance }); // Pasar serverInstance por si Hono lo necesita
+    // Para Hono v4, el segundo argumento para app.fetch puede ser env y executionContext.
+    // Pasar serverInstance es más para Hono < v4 o contextos específicos.
+    // Para la simplicidad y compatibilidad general con Bun.serve y Hono:
+    return app.fetch(request); // Hono normalmente no necesita serverInstance aquí.
   },
-  websocket: webSocketHandler, // El handler de WebSocket de Bun
+  websocket: webSocketHandler,
   error(error) {
     console.error("Bun.serve error:", error);
     return new Response("Internal Server Error", { status: 500 });
@@ -84,6 +91,4 @@ const server = Bun.serve({
 });
 
 console.log(`🚀 Servidor escuchando en http://${server.hostname}:${server.port}`);
-
-// Exportar broadcastUpdate para que los handlers de Hono puedan usarlo
 export { broadcastUpdate };

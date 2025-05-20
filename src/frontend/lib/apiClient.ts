@@ -1,7 +1,7 @@
 // src/frontend/lib/apiClient.ts
 import { useAuthStore } from "../store/authStore";
 
-const API_BASE_URL = "http://localhost:3000/api"; // Cambiado para apuntar al backend en el puerto 3000
+const API_BASE_URL = "http://localhost:3000/api";
 
 interface ApiErrorData {
   error: string; // Esperamos que el backend devuelva un objeto con una propiedad 'error'

@@ -5,7 +5,14 @@ import type { Appointment } from "@/shared/types";
 import { Trash2, Edit3, Clock, CalendarIcon } from "lucide-react"; // Iconos
 import { format, parseISO, differenceInMinutes } from "date-fns"; // Para formatear fechas
 import { Button } from "../ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../ui/card";
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	CardFooter,
+} from "../ui/card";
 import { Badge } from "../ui/badge";
 
 interface AppointmentItemProps {
